@@ -10,6 +10,10 @@
     <h1>Twitter Bookmark Exporter</h1>
     <button id="start-export">Start Export</button>
     <p id="status">Ready to export.</p>
+    <div id="progress-container" style="display: none; margin-top: 10px;">
+      <progress id="progress-bar" value="0" max="100" style="width: 100%;"></progress>
+      <p id="progress-label" style="text-align: center; font-size: 12px; margin: 5px 0 0 0;"></p>
+    </div>
     <button id="save-file" style="display: none; margin-top: 10px;">Save File</button>
   </div>
   <script src="popup.js"></script>
