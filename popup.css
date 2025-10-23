@@ -1,0 +1,30 @@
+body {
+  font-family: sans-serif;
+  width: 250px;
+  padding: 10px;
+}
+
+.container {
+  text-align: center;
+}
+
+h1 {
+  font-size: 1.2em;
+}
+
+button {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  background-color: #f0f0f0;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #e0e0e0;
+}
+
+#status {
+  margin-top: 10px;
+  font-style: italic;
+}

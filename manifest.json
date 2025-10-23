@@ -1,0 +1,31 @@
+{
+  "manifest_version": 2,
+  "name": "Twitter Bookmark Exporter",
+  "version": "1.0",
+  "description": "Exports Twitter bookmarks to a markdown file.",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "downloads",
+    "https://twitter.com/*"
+  ],
+  "browser_action": {
+    "default_icon": {
+      "48": "icons/icon-48.png"
+    },
+    "default_title": "Export Bookmarks",
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "scripts": ["background.js"]
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://twitter.com/i/bookmarks"],
+      "js": ["content_script.js"]
+    }
+  ],
+  "icons": {
+    "48": "icons/icon-48.png"
+  }
+}
