@@ -76,11 +76,75 @@
     }
   };
 
+  // --- PROGRESS BAR MANAGEMENT ---
+  const injectProgressBar = async () => {
+    const response = await fetch(browser.runtime.getURL('progress.html'));
+    const html = await response.text();
+    const container = document.createElement('div');
+    container.innerHTML = html;
+    document.body.appendChild(container);
+
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.type = 'text/css';
+    link.href = browser.runtime.getURL('progress.css');
+    document.head.appendChild(link);
+  };
+
+  const updateProgressBar = (progress, total, status) => {
+    const progressBar = document.getElementById('tbe-progress-bar');
+    const progressLabel = document.getElementById('tbe-progress-label');
+    if (progressBar && progressLabel) {
+      progressBar.style.width = `${(progress / total) * 100}%`;
+      progressLabel.textContent = status;
+    }
+  };
+
+  const removeProgressBar = () => {
+    const container = document.getElementById('tbe-progress-container');
+    if (container) {
+      container.parentElement.remove();
+    }
+  };
+
+
   // --- MAIN SCRAPING FUNCTION ---
   const scrapeBookmarks = async () => {
     console.log("Starting bookmark collection...");
-    browser.runtime.sendMessage({ action: 'export-status', status: 'Scraping bookmarks...' });
+    await injectProgressBar();
 
+    // --- PRE-SCAN FOR TOTAL COUNT ---
+    let totalBookmarks = 0;
+    const prescanTweets = new Set();
+    let lastHeight = 0;
+    let noChangeCount = 0;
+    const prescanScrollDelay = 1500; // Faster scroll for pre-scan
+
+    while (noChangeCount < 3) { // Stop if height doesn't change for a few scrolls
+      const elements = document.querySelectorAll('article[data-testid="tweet"]');
+      elements.forEach(el => {
+        const id = parseTweetElement(el)?.id;
+        if(id) prescanTweets.add(id);
+      });
+      totalBookmarks = prescanTweets.size;
+
+      updateProgressBar(0, totalBookmarks, `Found ${totalBookmarks} total bookmarks. Starting scrape...`);
+
+      window.scrollTo(0, document.body.scrollHeight);
+      await sleep(prescanScrollDelay);
+
+      const newHeight = document.body.scrollHeight;
+      if (newHeight === lastHeight) {
+        noChangeCount++;
+      } else {
+        noChangeCount = 0;
+      }
+      lastHeight = newHeight;
+    }
+     window.scrollTo(0, 0); // Scroll back to the top
+     await sleep(1000); // Wait for page to settle
+
+    // --- DETAILED SCRAPE ---
     const storedTweetIds = await getStoredTweetIds();
     const collectedTweets = [];
     const tweetsSeenOnPage = new Set();
@@ -105,7 +169,7 @@
       }
 
       console.log(`Collected ${collectedTweets.length} new unique tweets so far...`);
-      browser.runtime.sendMessage({ action: 'export-status', status: `Found ${collectedTweets.length} new bookmarks...` });
+      updateProgressBar(tweetsSeenOnPage.size, totalBookmarks, `Scraped ${tweetsSeenOnPage.size} of ${totalBookmarks} bookmarks...`);
 
       if (newTweetsFoundThisScroll === 0) {
         noNewTweetsCount++;
@@ -125,10 +189,16 @@
     // Send final data to background script
     console.log(`Finished scraping. Sending ${collectedTweets.length} new tweets to be exported.`);
     browser.runtime.sendMessage({ action: 'export-data', data: collectedTweets });
-    browser.runtime.sendMessage({ action: 'export-status', status: `Exporting ${collectedTweets.length} new tweets...` });
+
+    // Clean up
+    removeProgressBar();
   };
 
-  // --- START SCRAPING ---
-  await scrapeBookmarks();
+  // --- EVENT LISTENER ---
+  browser.runtime.onMessage.addListener((message) => {
+    if (message.action === 'start-export-in-page') {
+      scrapeBookmarks();
+    }
+  });
 
 })();

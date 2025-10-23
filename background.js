@@ -3,6 +3,7 @@
 // --- STATE MANAGEMENT ---
 let collectedTweets = [];
 let storedTweetIds = new Set();
+let markdownContent = ''; // To store the generated markdown
 
 // Load stored tweet IDs on startup
 browser.storage.local.get('exportedTweetIds').then((data) => {
@@ -19,6 +20,8 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
     handleStartExport(sender.tab);
   } else if (message.action === 'export-data') {
     await handleExportData(message.data);
+  } else if (message.action === 'save-file') {
+    await handleSaveFile();
   }
 });
 
@@ -32,8 +35,9 @@ const handleStartExport = (tab) => {
         return;
     }
 
-    // Reset tweet collection for a new export
+    // Reset state for a new export
     collectedTweets = [];
+    markdownContent = '';
 
     // Inject the content script to start scraping
     browser.tabs.executeScript(tab.id, { file: 'content_script.js' });
@@ -58,8 +62,17 @@ const handleExportData = async (newTweets) => {
   collectedTweets = uniqueNewTweets;
   console.log(`Processing ${collectedTweets.length} new tweets.`);
 
-  // Generate and save markdown
-  const markdownContent = generateMarkdown(collectedTweets);
+  // Generate and store markdown
+  markdownContent = generateMarkdown(collectedTweets);
+
+  // Notify the popup that the export is complete and ready to be saved
+  browser.runtime.sendMessage({
+      action: 'export-complete',
+      status: `Export of ${collectedTweets.length} new bookmarks is ready.`
+  });
+};
+
+const handleSaveFile = async () => {
   await saveMarkdownToFile(markdownContent);
 
   // Update stored tweet IDs
@@ -72,6 +85,10 @@ const handleExportData = async (newTweets) => {
 
   console.log(`Export complete. Stored ${storedTweetIds.size} total tweet IDs.`);
   browser.runtime.sendMessage({ action: 'export-status', status: `Exported ${collectedTweets.length} new bookmarks!` });
+
+  // Reset state after saving
+  collectedTweets = [];
+  markdownContent = '';
 };
 
 
