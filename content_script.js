@@ -76,6 +76,38 @@
     }
   };
 
+  // --- PROGRESS BAR MANAGEMENT ---
+  const injectProgressBar = async () => {
+    const response = await fetch(browser.runtime.getURL('progress.html'));
+    const html = await response.text();
+    const container = document.createElement('div');
+    container.innerHTML = html;
+    document.body.appendChild(container);
+
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.type = 'text/css';
+    link.href = browser.runtime.getURL('progress.css');
+    document.head.appendChild(link);
+  };
+
+  const updateProgressBar = (progress, total, status) => {
+    const progressBar = document.getElementById('tbe-progress-bar');
+    const progressLabel = document.getElementById('tbe-progress-label');
+    if (progressBar && progressLabel) {
+      progressBar.style.width = `${(progress / total) * 100}%`;
+      progressLabel.textContent = status;
+    }
+  };
+
+  const removeProgressBar = () => {
+    const container = document.getElementById('tbe-progress-container');
+    if (container) {
+      container.parentElement.remove();
+    }
+  };
+
+
   // --- MAIN SCRAPING FUNCTION ---
   const scrapeBookmarks = async () => {
     console.log("Starting bookmark collection...");
@@ -167,10 +199,16 @@
     // Send final data to background script
     console.log(`Finished scraping. Sending ${collectedTweets.length} new tweets to be exported.`);
     browser.runtime.sendMessage({ action: 'export-data', data: collectedTweets });
-    browser.runtime.sendMessage({ action: 'export-status', status: `Exporting ${collectedTweets.length} new tweets...` });
+
+    // Clean up
+    removeProgressBar();
   };
 
-  // --- START SCRAPING ---
-  await scrapeBookmarks();
+  // --- EVENT LISTENER ---
+  browser.runtime.onMessage.addListener((message) => {
+    if (message.action === 'start-export-in-page') {
+      scrapeBookmarks();
+    }
+  });
 
 })();
