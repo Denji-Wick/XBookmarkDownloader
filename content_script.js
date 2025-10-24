@@ -111,7 +111,12 @@
   // --- MAIN SCRAPING FUNCTION ---
   const scrapeBookmarks = async () => {
     console.log("Starting bookmark collection...");
+
+    // Inject the in-page progress bar
+    await injectProgressBar();
+
     browser.runtime.sendMessage({ action: 'export-status', status: 'Scanning bookmarks...' });
+    updateProgressBar(0, 100, 'Initializing...');
 
     // --- PRE-SCAN FOR TOTAL COUNT ---
     let totalBookmarks = 0;
@@ -134,6 +139,7 @@
         total: totalBookmarks,
         status: `Found ${totalBookmarks} total bookmarks. Starting scrape...`
       });
+      updateProgressBar(0, totalBookmarks, `Found ${totalBookmarks} bookmarks. Preparing...`);
 
       window.scrollTo(0, document.body.scrollHeight);
       await sleep(prescanScrollDelay);
@@ -180,6 +186,7 @@
           total: totalBookmarks,
           status: `Scraped ${tweetsSeenOnPage.size} of ${totalBookmarks} bookmarks...`
        });
+       updateProgressBar(tweetsSeenOnPage.size, totalBookmarks, `Scraped ${tweetsSeenOnPage.size} of ${totalBookmarks} bookmarks...`);
 
       if (newTweetsFoundThisScroll === 0) {
         noNewTweetsCount++;
@@ -198,6 +205,8 @@
 
     // Send final data to background script
     console.log(`Finished scraping. Sending ${collectedTweets.length} new tweets to be exported.`);
+    updateProgressBar(totalBookmarks, totalBookmarks, `Complete! Found ${collectedTweets.length} new bookmarks to export.`);
+    await sleep(2000); // Show completion message briefly
     browser.runtime.sendMessage({ action: 'export-data', data: collectedTweets });
 
     // Clean up

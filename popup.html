@@ -8,6 +8,13 @@
 <body>
   <div class="container">
     <h1>Twitter Bookmark Exporter</h1>
+
+    <div style="margin-bottom: 15px; padding: 10px; background: #f0f0f0; border-radius: 5px;">
+      <label style="font-size: 12px; display: block; margin-bottom: 5px;">Resume from existing file (optional):</label>
+      <input type="file" id="resume-file" accept=".md" style="font-size: 11px; width: 100%;">
+      <p id="resume-status" style="font-size: 11px; margin: 5px 0 0 0; color: #666;"></p>
+    </div>
+
     <button id="start-export">Start Export</button>
     <p id="status">Ready to export.</p>
     <div id="progress-container" style="display: none; margin-top: 10px;">
