@@ -25,12 +25,12 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
   }
 });
 
-const handleStartExport = (tab) => {
+const handleStartExport = async (tab) => {
     // Check if the URL is correct
-    if (tab.url !== "https://twitter.com/i/bookmarks") {
+    if (!tab.url.includes("twitter.com/i/bookmarks") && !tab.url.includes("x.com/i/bookmarks")) {
         browser.runtime.sendMessage({
             action: 'export-status',
-            status: 'Error: Please navigate to twitter.com/i/bookmarks'
+            status: 'Error: Please navigate to twitter.com/i/bookmarks or x.com/i/bookmarks'
         });
         return;
     }
@@ -39,8 +39,9 @@ const handleStartExport = (tab) => {
     collectedTweets = [];
     markdownContent = '';
 
-    // Inject the content script to start scraping
-    browser.tabs.executeScript(tab.id, { file: 'content_script.js' });
+    // Send message to content script to start scraping
+    // Content script is already injected via manifest.json
+    await browser.tabs.sendMessage(tab.id, { action: 'start-export-in-page' });
 };
 
 const handleExportData = async (newTweets) => {

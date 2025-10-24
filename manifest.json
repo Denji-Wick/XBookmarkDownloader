@@ -7,7 +7,8 @@
     "activeTab",
     "storage",
     "downloads",
-    "https://twitter.com/*"
+    "https://twitter.com/*",
+    "https://x.com/*"
   ],
   "browser_action": {
     "default_icon": {
@@ -21,7 +22,7 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://twitter.com/i/bookmarks"],
+      "matches": ["https://twitter.com/i/bookmarks", "https://x.com/i/bookmarks"],
       "js": ["content_script.js"]
     }
   ],
